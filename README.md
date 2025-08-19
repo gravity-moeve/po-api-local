@@ -4,7 +4,7 @@ API local para manejo de escenarios y estados de proyectos.
 
 ## 🚀 Endpoints Disponibles
 
-### GET `/api/statuses`
+### GET `/api/scenarios/statuses`
 Retorna la lista de todos los estados disponibles con sus propiedades.
 
 ### GET `/api/scenarios`

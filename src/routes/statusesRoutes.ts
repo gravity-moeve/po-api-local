@@ -1,19 +1,10 @@
 import { getStatuses } from '../controllers/statusesController';
+import { createResponse, createErrorResponse } from '../utils/responseUtils';
 
 export const handleStatusesRoute = (req: Request) => {
   if (req.method === 'GET') {
-    return new Response(JSON.stringify(getStatuses(), null, 2), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
+    return createResponse(getStatuses());
   }
   
-  return new Response(JSON.stringify({ error: "Method not allowed" }), {
-    status: 405,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
+  return createErrorResponse("Method not allowed", 405);
 };
