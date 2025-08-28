@@ -25,7 +25,13 @@ export const handleScenariosRoute = (req: Request) => {
         }
         
         const newScenario = createScenario(body as CreateScenarioRequest);
-        return createResponse(newScenario, 201);
+        
+        // Add 2 second delay before responding
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(createResponse(newScenario, 201));
+          }, 3000);
+        });
       } catch (error) {
         return createErrorResponse("Invalid scenario data", 400);
       }
