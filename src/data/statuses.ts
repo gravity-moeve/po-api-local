@@ -1,4 +1,4 @@
-import { StatusInfo } from '../types';
+import type { StatusInfo } from '../types';
 
 export const statusesData: StatusInfo[] = [
   {

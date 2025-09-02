@@ -1,5 +1,5 @@
 import { handleStatusesRoute } from './routes/statusesRoutes';
-import { handleScenariosRoute } from './routes/scenariosRoutes';
+import { handleScenariosRoute, handleScenarioByIdRoute } from './routes/scenariosRoutes';
 import { handleTableDefinitionsRoute } from './routes/tableDefinitionsRoutes';
 import { 
   handleInputDatasetRoute, 
@@ -10,11 +10,11 @@ import {
 import { handleSimulationRoute } from './routes/simulationRoutes';
 import { createErrorResponse, handlePreflight } from './utils/responseUtils';
 
-const PORT = 3001;
+const PORT = 3003;
 
 const server = Bun.serve({
   port: PORT,
-  fetch(req) {
+  fetch(req): Response | Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
     const method = req.method;
@@ -39,13 +39,19 @@ const server = Bun.serve({
         return handleScenariosRoute(req);
       }
 
-      // Table definitions route
-      const tableDefinitionsMatch = path.match(/^\/api\/scenarios\/([^\/]+)\/inputs\/definitions$/);
-      if (tableDefinitionsMatch) {
-        const scenarioId = tableDefinitionsMatch[1];
-        if (scenarioId) {
-          return handleTableDefinitionsRoute(req, scenarioId);
+      // Scenario by ID route
+      const scenarioByIdMatch = path.match(/^\/api\/scenarios\/([^\/]+)$/);
+      if (scenarioByIdMatch) {
+        const scenarioId = scenarioByIdMatch[1];
+        if (scenarioId && scenarioId !== "statuses") {
+          return handleScenarioByIdRoute(req, scenarioId);
         }
+      }
+
+      // Table definitions route - corrected path
+      const tableDefinitionsMatch = path.match(/^\/api\/scenarios\/inputs\/definitions$/);
+      if (tableDefinitionsMatch) {
+        return handleTableDefinitionsRoute(req);
       }
 
       // Input dataset routes
@@ -112,7 +118,8 @@ console.log(`📊 Available endpoints:`);
 console.log(`   GET  /api/scenarios/statuses - Get all statuses`);
 console.log(`   GET  /api/scenarios - Get all scenarios (with filters)`);
 console.log(`   POST /api/scenarios - Create new scenario`);
-console.log(`   GET  /api/scenarios/{id}/inputs/definitions - Get table definitions`);
+console.log(`   GET  /api/scenarios/{id} - Get scenario general info`);
+console.log(`   GET  /api/scenarios/inputs/definitions - Get table definitions`);
 console.log(`   GET  /api/scenarios/{id}/inputs/{tableId}/dataset - Get input dataset`);
 console.log(`   PUT  /api/scenarios/{id}/inputs/{tableId}/dataset - Replace dataset`);
 console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/upload-csv - Upload CSV`);

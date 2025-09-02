@@ -1,13 +1,13 @@
-import { getScenarios, createScenario } from '../controllers/scenariosController';
+import { getScenarios, createScenario, getScenarioGeneralInfo } from '../controllers/scenariosController';
 import { createResponse, createErrorResponse } from '../utils/responseUtils';
-import type { CreateScenarioRequest } from '../types';
+import type { CreateScenarioRequest, ScenarioStatusEnum } from '../types';
 
 export const handleScenariosRoute = (req: Request) => {
   if (req.method === 'GET') {
     console.log("Scenarios route");
     
     const url = new URL(req.url);
-    const status = url.searchParams.get('status');
+    const status = url.searchParams.get('status') as ScenarioStatusEnum | null;
     const creationDate = url.searchParams.get('creationDate');
     
     const scenarios = getScenarios(status || undefined, creationDate || undefined);
@@ -24,12 +24,12 @@ export const handleScenariosRoute = (req: Request) => {
           return createErrorResponse("Missing required fields: name and periods", 400);
         }
         
-        const newScenario = createScenario(body as CreateScenarioRequest);
+        const idResponse = createScenario(body as CreateScenarioRequest);
         
         // Add 2 second delay before responding
-        return new Promise((resolve) => {
+        return new Promise<Response>((resolve) => {
           setTimeout(() => {
-            resolve(createResponse(newScenario, 201));
+            resolve(createResponse(idResponse, 201));
           }, 3000);
         });
       } catch (error) {
@@ -38,6 +38,21 @@ export const handleScenariosRoute = (req: Request) => {
     }).catch(() => {
       return createErrorResponse("Invalid JSON body", 400);
     });
+  }
+  
+  return createErrorResponse("Method not allowed", 405);
+};
+
+export const handleScenarioByIdRoute = (req: Request, scenarioId: string) => {
+  if (req.method === 'GET') {
+    console.log(`Getting scenario general info for: ${scenarioId}`);
+    
+    const scenarioInfo = getScenarioGeneralInfo(scenarioId);
+    if (!scenarioInfo) {
+      return createErrorResponse("Scenario not found", 404);
+    }
+    
+    return createResponse(scenarioInfo);
   }
   
   return createErrorResponse("Method not allowed", 405);

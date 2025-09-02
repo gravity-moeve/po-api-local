@@ -6,8 +6,27 @@ import {
   generateDownloadLink 
 } from '../controllers/inputDatasetsController';
 import { createResponse, createErrorResponse } from '../utils/responseUtils';
+import type { TableId } from '../types';
+
+const validTableIds: TableId[] = [
+  "domesticDemandForecast",
+  "importOpportunities", 
+  "internationalDemandForecast",
+  "productionPlan",
+  "stockCapacities",
+  "initialStock",
+  "logisticsCosts"
+];
+
+const isValidTableId = (tableId: string): tableId is TableId => {
+  return validTableIds.includes(tableId as TableId);
+};
 
 export const handleInputDatasetRoute = (req: Request, scenarioId: string, tableId: string) => {
+  if (!isValidTableId(tableId)) {
+    return createErrorResponse("Invalid table ID", 400);
+  }
+
   if (req.method === 'GET') {
     console.log(`Getting dataset for scenario: ${scenarioId}, table: ${tableId}`);
     
@@ -42,6 +61,10 @@ export const handleInputDatasetRoute = (req: Request, scenarioId: string, tableI
 };
 
 export const handleCsvUploadRoute = (req: Request, scenarioId: string, tableId: string) => {
+  if (!isValidTableId(tableId)) {
+    return createErrorResponse("Invalid table ID", 400);
+  }
+
   if (req.method === 'POST') {
     console.log(`Uploading CSV for scenario: ${scenarioId}, table: ${tableId}`);
     
@@ -64,6 +87,10 @@ export const handleCsvUploadRoute = (req: Request, scenarioId: string, tableId: 
 };
 
 export const handleSyncFromDatalakeRoute = (req: Request, scenarioId: string, tableId: string) => {
+  if (!isValidTableId(tableId)) {
+    return createErrorResponse("Invalid table ID", 400);
+  }
+
   if (req.method === 'POST') {
     console.log(`Syncing from datalake for scenario: ${scenarioId}, table: ${tableId}`);
     
@@ -75,6 +102,10 @@ export const handleSyncFromDatalakeRoute = (req: Request, scenarioId: string, ta
 };
 
 export const handleDownloadCsvRoute = (req: Request, scenarioId: string, tableId: string) => {
+  if (!isValidTableId(tableId)) {
+    return createErrorResponse("Invalid table ID", 400);
+  }
+
   if (req.method === 'POST') {
     console.log(`Generating download link for scenario: ${scenarioId}, table: ${tableId}`);
     

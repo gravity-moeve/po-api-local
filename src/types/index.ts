@@ -1,7 +1,7 @@
-export type Statuses = "done" | "invalid" | "draft" | "running" | "error" | "canceled";
+export type ScenarioStatusEnum = "done" | "running" | "draft" | "canceled" | "error" | "invalid";
 
 export type StatusInfo = {
-  id: Statuses;
+  id: ScenarioStatusEnum;
   name: string;
   isFinal: boolean;
   isRunnable: boolean;
@@ -15,22 +15,33 @@ export type Scenario = {
   id: string;
   name: string;
   creationDate: string;
-  statusId: string;
+  statusId: ScenarioStatusEnum;
   planning: {
     startDate: string;
     endDate: string;
   };
 };
 
-// New types from OpenAPI specification
 export type CreateScenarioRequest = {
   name: string;
   periods: ScenarioPeriod[];
 };
 
 export type ScenarioPeriod = {
+  id: number;
   startDate: string;
   endDate: string;
+};
+
+export type ScenarioGeneralInfo = {
+  id: string;
+  name: string;
+  statusId: ScenarioStatusEnum;
+  periods: ScenarioPeriod[];
+};
+
+export type IdResponse = {
+  id: string;
 };
 
 export type TableDefinition = {
@@ -109,3 +120,79 @@ export type ErrorResponse = {
   code: number;
   message: string;
 };
+
+// Specific dataset types for each table
+export type TableId = 
+  | "domesticDemandForecast"
+  | "importOpportunities" 
+  | "internationalDemandForecast"
+  | "productionPlan"
+  | "stockCapacities"
+  | "initialStock"
+  | "logisticsCosts";
+
+export type DomesticDemandForecastRow = {
+  period: number;
+  location: string;
+  product: string;
+  volume: number;
+  price: number;
+  minVolume: number;
+};
+
+export type ImportOpportunitiesRow = {
+  period: number;
+  product: string;
+  volume: number;
+  incoterm: string;
+  cifDestinationOrFobOrigin: string;
+  price: number;
+  opportunity: string;
+};
+
+export type InternationalDemandForecastRow = {
+  period: number;
+  product: string;
+  volume: number;
+  incoterm: string;
+  cifDestinationOrFobOrigin: string;
+  price: number;
+  opportunity: string;
+};
+
+export type ProductionPlanRow = {
+  period: number;
+  location: string;
+  product: string;
+  flow: number;
+};
+
+export type StockCapacitiesRow = {
+  period: number;
+  location: string;
+  product: string;
+  minVolume: number;
+  capacity: number;
+};
+
+export type InitialStockRow = {
+  location: string;
+  product: string;
+  minVolume: number;
+};
+
+export type LogisticsCostsRow = {
+  vessel: string;
+  startDate: string;
+  dailyCost: number;
+  dailyFixedCosts: number;
+};
+
+export type InputDatasetByTable = 
+  | { tableId: "domesticDemandForecast"; title: string; rows: DomesticDemandForecastRow[] }
+  | { tableId: "importOpportunities"; title: string; rows: ImportOpportunitiesRow[] }
+  | { tableId: "internationalDemandForecast"; title: string; rows: InternationalDemandForecastRow[] }
+  | { tableId: "productionPlan"; title: string; rows: ProductionPlanRow[] }
+  | { tableId: "stockCapacities"; title: string; rows: StockCapacitiesRow[] }
+  | { tableId: "initialStock"; title: string; rows: InitialStockRow[] }
+  | { tableId: "logisticsCosts"; title: string; rows: LogisticsCostsRow[] };

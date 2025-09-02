@@ -1,11 +1,11 @@
 import { getTableDefinitions } from '../controllers/tableDefinitionsController';
 import { createResponse, createErrorResponse } from '../utils/responseUtils';
 
-export const handleTableDefinitionsRoute = (req: Request, scenarioId: string) => {
+export const handleTableDefinitionsRoute = (req: Request) => {
   if (req.method === 'GET') {
-    console.log(`Getting table definitions for scenario: ${scenarioId}`);
+    console.log("Getting table definitions");
     
-    const definitions = getTableDefinitions(scenarioId);
+    const definitions = getTableDefinitions();
     return createResponse(definitions);
   }
   
