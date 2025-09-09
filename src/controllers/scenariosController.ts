@@ -1,8 +1,10 @@
-import { scenariosData } from '../data/scenarios';
+import { DataService } from '../services/dataService';
 import type { Scenario, CreateScenarioRequest, ScenarioGeneralInfo, IdResponse, ScenarioStatusEnum } from '../types';
 
+const dataService = DataService.getInstance();
+
 export const getScenarios = (status?: ScenarioStatusEnum, creationDate?: string): Scenario[] => {
-  let filteredScenarios = [...scenariosData];
+  let filteredScenarios = dataService.getAllScenarios();
 
   // Filter by status
   if (status) {
@@ -21,7 +23,12 @@ export const getScenarios = (status?: ScenarioStatusEnum, creationDate?: string)
   return filteredScenarios;
 };
 
-export const createScenario = (request: CreateScenarioRequest): IdResponse => {
+export const createScenario = (request: CreateScenarioRequest): { success: true; data: IdResponse } | { success: false; error: string; code: number } => {
+  // Check for duplicate name
+  if (dataService.scenarioNameExists(request.name)) {
+    return { success: false, error: "Validation error occurred while creating scenario: name already exists", code: 422 };
+  }
+
   const newId = `scenario_${Date.now()}`;
   const now = new Date().toISOString().split('T')[0]!; // YYYY-MM-DD format
 
@@ -36,14 +43,12 @@ export const createScenario = (request: CreateScenarioRequest): IdResponse => {
     }
   };
 
-  // In a real app, this would be saved to a database
-  scenariosData.push(newScenario);
-
-  return { id: newId };
+  dataService.createScenario(newScenario);
+  return { success: true, data: { id: newId } };
 };
 
 export const getScenarioGeneralInfo = (scenarioId: string): ScenarioGeneralInfo | null => {
-  const scenario = scenariosData.find(s => s.id === scenarioId);
+  const scenario = dataService.getScenarioById(scenarioId);
   if (!scenario) return null;
 
   // Convert planning to periods format
@@ -59,4 +64,45 @@ export const getScenarioGeneralInfo = (scenarioId: string): ScenarioGeneralInfo 
     statusId: scenario.statusId,
     periods
   };
+};
+
+export const updateScenarioName = (scenarioId: string, newName: string): { success: true; data: IdResponse } | { success: false; error: string; code: number } => {
+  // Check if scenario exists
+  if (!dataService.scenarioExists(scenarioId)) {
+    return { success: false, error: "Scenario not found", code: 404 };
+  }
+
+  // Check for duplicate name (excluding current scenario)
+  if (dataService.scenarioNameExists(newName, scenarioId)) {
+    return { success: false, error: "Validation error occurred while creating scenario: name already exists", code: 422 };
+  }
+
+  // Update the scenario
+  const updatedScenario = dataService.updateScenario(scenarioId, { name: newName });
+  if (!updatedScenario) {
+    return { success: false, error: "Failed to update scenario", code: 500 };
+  }
+
+  return { success: true, data: { id: scenarioId } };
+};
+
+export const duplicateScenario = (scenarioId: string): { success: true; data: IdResponse } | { success: false; error: string; code: number } => {
+  const scenario = dataService.getScenarioById(scenarioId);
+  if (!scenario) {
+    return { success: false, error: "Scenario not found", code: 404 };
+  }
+
+  const newId = `scenario_${Date.now()}`;
+  const now = new Date().toISOString().split('T')[0]!; // YYYY-MM-DD format
+
+  const duplicatedScenario: Scenario = {
+    ...scenario,
+    id: newId,
+    name: `${scenario.name} (Copy)`,
+    creationDate: now,
+    statusId: "draft"
+  };
+
+  dataService.createScenario(duplicatedScenario);
+  return { success: true, data: { id: newId } };
 };

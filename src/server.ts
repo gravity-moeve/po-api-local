@@ -1,5 +1,5 @@
 import { handleStatusesRoute } from './routes/statusesRoutes';
-import { handleScenariosRoute, handleScenarioByIdRoute } from './routes/scenariosRoutes';
+import { handleScenariosRoute, handleScenarioByIdRoute, handleScenarioDuplicateRoute } from './routes/scenariosRoutes';
 import { handleTableDefinitionsRoute } from './routes/tableDefinitionsRoutes';
 import { 
   handleInputDatasetRoute, 
@@ -7,10 +7,10 @@ import {
   handleSyncFromDatalakeRoute, 
   handleDownloadCsvRoute 
 } from './routes/inputDatasetsRoutes';
-import { handleSimulationRoute } from './routes/simulationRoutes';
+import { handleSimulationRoute, handleSimulationCancelRoute } from './routes/simulationRoutes';
 import { createErrorResponse, handlePreflight } from './utils/responseUtils';
 
-const PORT = 3003;
+const PORT = 3001;
 
 const server = Bun.serve({
   port: PORT,
@@ -99,6 +99,24 @@ const server = Bun.serve({
         }
       }
 
+      // Cancel simulation route
+      const cancelMatch = path.match(/^\/api\/scenarios\/([^\/]+)\/cancel$/);
+      if (cancelMatch) {
+        const scenarioId = cancelMatch[1];
+        if (scenarioId) {
+          return handleSimulationCancelRoute(req, scenarioId);
+        }
+      }
+
+      // Duplicate scenario route
+      const duplicateMatch = path.match(/^\/api\/scenarios\/([^\/]+)\/duplicate$/);
+      if (duplicateMatch) {
+        const scenarioId = duplicateMatch[1];
+        if (scenarioId) {
+          return handleScenarioDuplicateRoute(req, scenarioId);
+        }
+      }
+
       // Default response for unknown routes
       console.log(`Route not found: ${path}`);
       return createErrorResponse("Not found", 404);
@@ -119,6 +137,7 @@ console.log(`   GET  /api/scenarios/statuses - Get all statuses`);
 console.log(`   GET  /api/scenarios - Get all scenarios (with filters)`);
 console.log(`   POST /api/scenarios - Create new scenario`);
 console.log(`   GET  /api/scenarios/{id} - Get scenario general info`);
+console.log(`   PUT  /api/scenarios/{id} - Update scenario name`);
 console.log(`   GET  /api/scenarios/inputs/definitions - Get table definitions`);
 console.log(`   GET  /api/scenarios/{id}/inputs/{tableId}/dataset - Get input dataset`);
 console.log(`   PUT  /api/scenarios/{id}/inputs/{tableId}/dataset - Replace dataset`);
@@ -126,3 +145,5 @@ console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/upload-csv - U
 console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/sync-from-datalake - Sync from datalake`);
 console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/download-csv - Generate download link`);
 console.log(`   POST /api/scenarios/{id}/run - Run simulation`);
+console.log(`   POST /api/scenarios/{id}/cancel - Cancel simulation`);
+console.log(`   POST /api/scenarios/{id}/duplicate - Duplicate scenario`);
