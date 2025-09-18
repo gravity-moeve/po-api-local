@@ -43,7 +43,7 @@ export const createScenario = (request: CreateScenarioRequest): { success: true;
     }
   };
 
-  dataService.createScenario(newScenario);
+  dataService.createScenario(newScenario, request.periods);
   return { success: true, data: { id: newId } };
 };
 
@@ -51,8 +51,9 @@ export const getScenarioGeneralInfo = (scenarioId: string): ScenarioGeneralInfo 
   const scenario = dataService.getScenarioById(scenarioId);
   if (!scenario) return null;
 
-  // Convert planning to periods format
-  const periods = [{
+  // Get periods from scenario periods data
+  const scenarioPeriods = dataService.getScenarioPeriods(scenarioId);
+  const periods = scenarioPeriods?.periods || [{
     id: 1,
     startDate: scenario.planning.startDate.includes('T') ? scenario.planning.startDate.split('T')[0]! : scenario.planning.startDate,
     endDate: scenario.planning.endDate.includes('T') ? scenario.planning.endDate.split('T')[0]! : scenario.planning.endDate
@@ -103,6 +104,10 @@ export const duplicateScenario = (scenarioId: string): { success: true; data: Id
     statusId: "draft"
   };
 
-  dataService.createScenario(duplicatedScenario);
+  // Get the original scenario's periods for duplication
+  const originalPeriods = dataService.getScenarioPeriods(scenarioId);
+  const periods = originalPeriods?.periods || [];
+
+  dataService.createScenario(duplicatedScenario, periods);
   return { success: true, data: { id: newId } };
 };

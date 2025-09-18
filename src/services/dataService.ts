@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import type { Scenario } from '../types';
+import type { Scenario, ScenarioPeriods, ScenarioPeriod } from '../types';
 
 const DATA_DIR = 'data';
 const SCENARIOS_FILE = join(DATA_DIR, 'scenarios.json');
+const SCENARIO_PERIODS_FILE = join(DATA_DIR, 'scenarioPeriods.json');
 
 // Ensure data directory exists
 if (!existsSync(DATA_DIR)) {
@@ -87,9 +88,11 @@ const defaultScenarios: Scenario[] = [
 export class DataService {
   private static instance: DataService;
   private scenarios: Scenario[] = [];
+  private scenarioPeriods: ScenarioPeriods[] = [];
 
   private constructor() {
     this.loadScenarios();
+    this.loadScenarioPeriods();
   }
 
   public static getInstance(): DataService {
@@ -129,6 +132,34 @@ export class DataService {
     }
   }
 
+  private loadScenarioPeriods(): void {
+    try {
+      if (existsSync(SCENARIO_PERIODS_FILE)) {
+        const data = readFileSync(SCENARIO_PERIODS_FILE, 'utf-8');
+        this.scenarioPeriods = JSON.parse(data);
+        console.log(`📁 Loaded ${this.scenarioPeriods.length} scenario periods from file`);
+      } else {
+        this.scenarioPeriods = [];
+        this.saveScenarioPeriods();
+        console.log(`📁 Initialized empty scenario periods`);
+      }
+    } catch (error) {
+      console.error('Error loading scenario periods:', error);
+      this.scenarioPeriods = [];
+      this.saveScenarioPeriods();
+    }
+  }
+
+  private saveScenarioPeriods(): void {
+    try {
+      const data = JSON.stringify(this.scenarioPeriods, null, 2);
+      writeFileSync(SCENARIO_PERIODS_FILE, data, 'utf-8');
+      console.log(`💾 Saved ${this.scenarioPeriods.length} scenario periods to file`);
+    } catch (error) {
+      console.error('Error saving scenario periods:', error);
+    }
+  }
+
   public getAllScenarios(): Scenario[] {
     return [...this.scenarios];
   }
@@ -137,9 +168,21 @@ export class DataService {
     return this.scenarios.find(s => s.id === id) || null;
   }
 
-  public createScenario(scenario: Scenario): Scenario {
+  public createScenario(scenario: Scenario, periods?: ScenarioPeriod[]): Scenario {
     this.scenarios.push(scenario);
     this.saveScenarios();
+
+    // Create corresponding scenario periods if provided
+    if (periods && periods.length > 0) {
+      const scenarioPeriods: ScenarioPeriods = {
+        scenarioId: scenario.id,
+        scenarioName: scenario.name,
+        periods: periods
+      };
+      this.scenarioPeriods.push(scenarioPeriods);
+      this.saveScenarioPeriods();
+    }
+
     return scenario;
   }
 
@@ -167,5 +210,13 @@ export class DataService {
 
   public scenarioNameExists(name: string, excludeId?: string): boolean {
     return this.scenarios.some(s => s.name === name && s.id !== excludeId);
+  }
+
+  public getScenarioPeriods(scenarioId: string): ScenarioPeriods | null {
+    return this.scenarioPeriods.find(sp => sp.scenarioId === scenarioId) || null;
+  }
+
+  public getAllScenarioPeriods(): ScenarioPeriods[] {
+    return [...this.scenarioPeriods];
   }
 }

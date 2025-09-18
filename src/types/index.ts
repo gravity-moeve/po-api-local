@@ -22,6 +22,12 @@ export type Scenario = {
   };
 };
 
+export type ScenarioPeriods = {
+  scenarioId: string;
+  scenarioName: string;
+  periods: ScenarioPeriod[];
+};
+
 export type CreateScenarioRequest = {
   name: string;
   periods: ScenarioPeriod[];
