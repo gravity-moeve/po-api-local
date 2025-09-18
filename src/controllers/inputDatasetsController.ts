@@ -1,25 +1,103 @@
-import { inputDatasetsData } from '../data/inputDatasets';
+import { DataService } from '../services/dataService';
+import { validateInputDataset, validateTableIdMatch } from '../utils/inputDatasetValidation';
 import type { InputDataset, DatasetReplaceResult, UploadResult, SyncResult, DownloadLink, InputDatasetByTable, TableId } from '../types';
 
-export const getInputDataset = (scenarioId: string, tableId: TableId, page: number = 1, pageSize: number = 100): InputDatasetByTable | null => {
-  const dataset = inputDatasetsData[tableId];
-  if (!dataset) return null;
+const dataService = DataService.getInstance();
 
-  // Simple pagination
+export type DatasetSaveResponse = {
+  scenarioId: string;
+  tableId: string;
+  rowCount: number;
+  updatedAt: string;
+};
+
+export type SaveResult = {
+  success: true;
+  data: DatasetSaveResponse;
+} | {
+  success: false;
+  error: string;
+  code: number;
+};
+
+export const getInputDataset = (scenarioId: string, tableId: TableId, page: number = 1, pageSize: number = 100): InputDatasetByTable | null => {
+  // Validate scenario exists
+  if (!dataService.scenarioExists(scenarioId)) {
+    return null;
+  }
+
+  // Get dataset from persistent storage
+  const storedDataset = dataService.getInputDataset(scenarioId, tableId);
+  if (!storedDataset) {
+    return null;
+  }
+
+  // Apply pagination
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   
   return {
-    ...dataset,
-    rows: dataset.rows.slice(startIndex, endIndex)
+    tableId: storedDataset.tableId,
+    title: storedDataset.title,
+    rows: storedDataset.rows.slice(startIndex, endIndex)
   } as InputDatasetByTable;
 };
 
+export const saveInputDataset = (scenarioId: string, tableId: TableId, dataset: any): SaveResult => {
+  // Validate scenario exists
+  if (!dataService.scenarioExists(scenarioId)) {
+    return { success: false, error: "Scenario not found", code: 404 };
+  }
+
+  // Validate payload structure
+  const payloadValidation = validateInputDataset(dataset);
+  if (!payloadValidation.isValid) {
+    return { 
+      success: false, 
+      error: `Validation error: ${payloadValidation.errors.join(', ')}`, 
+      code: 422 
+    };
+  }
+
+  // Validate tableId matches between URL and payload
+  const tableIdValidation = validateTableIdMatch(tableId, dataset.tableId);
+  if (!tableIdValidation.isValid) {
+    return { 
+      success: false, 
+      error: tableIdValidation.errors[0]!, 
+      code: 400 
+    };
+  }
+
+  try {
+    // Save the dataset
+    const storedDataset = dataService.saveInputDataset(scenarioId, tableId, dataset as InputDataset);
+    
+    return {
+      success: true,
+      data: {
+        scenarioId: storedDataset.scenarioId,
+        tableId: storedDataset.tableId,
+        rowCount: storedDataset.rows.length,
+        updatedAt: storedDataset.updatedAt
+      }
+    };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: "Failed to save dataset", 
+      code: 500 
+    };
+  }
+};
+
 export const replaceInputDataset = (scenarioId: string, tableId: TableId, newDataset: InputDataset): DatasetReplaceResult => {
-  const oldRowCount = inputDatasetsData[tableId]?.rows.length || 0;
+  // Get old row count from persistent storage
+  const existingDataset = dataService.getInputDataset(scenarioId, tableId);
+  const oldRowCount = existingDataset?.rows.length || 0;
   
-  // Replace the dataset (cast to match the expected type)
-  inputDatasetsData[tableId] = newDataset as InputDatasetByTable;
+  // Save the new dataset using persistent storage
+  dataService.saveInputDataset(scenarioId, tableId, newDataset);
   
   return {
     tableId,
@@ -60,17 +138,24 @@ export const uploadCsvDataset = (scenarioId: string, tableId: TableId, csvData: 
 };
 
 export const syncFromDatalake = (scenarioId: string, tableId: TableId): SyncResult => {
-  // Mock sync operation - would fetch from actual datalake
-  const existingDataset = inputDatasetsData[tableId];
-  const mockRows = existingDataset ? existingDataset.rows.slice(0, 2) : []; // Take first 2 rows as mock
+  // Get current row count before deletion
+  const existingDataset = dataService.getInputDataset(scenarioId, tableId);
+  const oldRowCount = existingDataset?.rows.length || 0;
+
+  // Delete current data for this scenario-tableId combination
+  dataService.deleteInputDataset(scenarioId, tableId);
+
+  // Generate fresh mock data based on tableId
+  const mockRows = generateMockDataForTable(tableId);
 
   const newDataset: InputDataset = {
     tableId,
-    title: `${tableId} Dataset (Synced)`,
+    title: `${tableId} Dataset (Synced from Datalake)`,
     rows: mockRows
   };
 
-  replaceInputDataset(scenarioId, tableId, newDataset);
+  // Save the new mock dataset
+  dataService.saveInputDataset(scenarioId, tableId, newDataset);
 
   return {
     tableId,
@@ -79,6 +164,59 @@ export const syncFromDatalake = (scenarioId: string, tableId: TableId): SyncResu
     warnings: []
   };
 };
+
+// Helper function to generate mock data based on table type
+function generateMockDataForTable(tableId: TableId): Record<string, any>[] {
+  switch (tableId) {
+    case 'domesticDemandForecast':
+      return [
+        { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1200, price: 1.45, minVolume: 600 },
+        { period: 2, location: 'Barcelona', product: 'Diesel', volume: 1800, price: 1.32, minVolume: 750 }
+      ];
+    
+    case 'importOpportunities':
+      return [
+        { period: 1, product: 'Crude Oil', volume: 5000, incoterm: 'CIF', cifDestinationOrFobOrigin: 'Barcelona', price: 85.50, opportunity: 'Algeria Import' },
+        { period: 2, product: 'Refined Oil', volume: 3000, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Morocco', price: 92.30, opportunity: 'Morocco Refinery' }
+      ];
+    
+    case 'internationalDemandForecast':
+      return [
+        { period: 1, product: 'Gasoline', volume: 2500, incoterm: 'CIF', cifDestinationOrFobOrigin: 'France', price: 1.55, opportunity: 'French Market' },
+        { period: 2, product: 'Diesel', volume: 3200, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Italy', price: 1.42, opportunity: 'Italian Distribution' }
+      ];
+    
+    case 'productionPlan':
+      return [
+        { period: 1, location: 'Refinery A', product: 'Gasoline', flow: 1500 },
+        { period: 2, location: 'Refinery B', product: 'Diesel', flow: 2200 }
+      ];
+    
+    case 'stockCapacities':
+      return [
+        { period: 1, location: 'Tank Farm 1', product: 'Gasoline', minVolume: 500, capacity: 5000 },
+        { period: 2, location: 'Tank Farm 2', product: 'Diesel', minVolume: 800, capacity: 8000 }
+      ];
+    
+    case 'initialStock':
+      return [
+        { location: 'Tank Farm 1', product: 'Gasoline', minVolume: 1000 },
+        { location: 'Tank Farm 2', product: 'Diesel', minVolume: 1500 }
+      ];
+    
+    case 'logisticsCosts':
+      return [
+        { vessel: 'Tanker Alpha', startDate: '2025-01-15', dailyCost: 25000, dailyFixedCosts: 5000 },
+        { vessel: 'Tanker Beta', startDate: '2025-02-01', dailyCost: 28000, dailyFixedCosts: 5500 }
+      ];
+    
+    default:
+      return [
+        { id: 1, name: 'Mock Data 1', value: 100 },
+        { id: 2, name: 'Mock Data 2', value: 200 }
+      ];
+  }
+}
 
 export const generateDownloadLink = (scenarioId: string, tableId: TableId): DownloadLink => {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]!; // YYYY-MM-DD format

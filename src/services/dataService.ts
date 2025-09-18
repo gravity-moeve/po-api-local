@@ -1,15 +1,30 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import type { Scenario, ScenarioPeriods, ScenarioPeriod } from '../types';
+import type { Scenario, ScenarioPeriods, ScenarioPeriod, InputDataset, TableId } from '../types';
 
 const DATA_DIR = 'data';
 const SCENARIOS_FILE = join(DATA_DIR, 'scenarios.json');
 const SCENARIO_PERIODS_FILE = join(DATA_DIR, 'scenarioPeriods.json');
+const INPUT_DATASETS_FILE = join(DATA_DIR, 'inputDatasets.json');
 
 // Ensure data directory exists
 if (!existsSync(DATA_DIR)) {
   mkdirSync(DATA_DIR, { recursive: true });
 }
+
+// Types for input dataset storage
+type StoredInputDataset = {
+  scenarioId: string;
+  tableId: string;
+  title: string;
+  rows: Record<string, any>[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+type InputDatasetsStorage = {
+  [key: string]: StoredInputDataset; // key format: "scenarioId-tableId"
+};
 
 // Default scenarios data
 const defaultScenarios: Scenario[] = [
@@ -89,10 +104,12 @@ export class DataService {
   private static instance: DataService;
   private scenarios: Scenario[] = [];
   private scenarioPeriods: ScenarioPeriods[] = [];
+  private inputDatasets: InputDatasetsStorage = {};
 
   private constructor() {
     this.loadScenarios();
     this.loadScenarioPeriods();
+    this.loadInputDatasets();
   }
 
   public static getInstance(): DataService {
@@ -218,5 +235,77 @@ export class DataService {
 
   public getAllScenarioPeriods(): ScenarioPeriods[] {
     return [...this.scenarioPeriods];
+  }
+
+  // Input Datasets methods
+  private loadInputDatasets(): void {
+    try {
+      if (existsSync(INPUT_DATASETS_FILE)) {
+        const data = readFileSync(INPUT_DATASETS_FILE, 'utf-8');
+        this.inputDatasets = JSON.parse(data);
+        console.log(`📁 Loaded ${Object.keys(this.inputDatasets).length} input datasets from file`);
+      } else {
+        this.inputDatasets = {};
+        this.saveInputDatasets();
+        console.log(`📁 Initialized empty input datasets`);
+      }
+    } catch (error) {
+      console.error('Error loading input datasets:', error);
+      this.inputDatasets = {};
+      this.saveInputDatasets();
+    }
+  }
+
+  private saveInputDatasets(): void {
+    try {
+      const data = JSON.stringify(this.inputDatasets, null, 2);
+      writeFileSync(INPUT_DATASETS_FILE, data, 'utf-8');
+      console.log(`💾 Saved ${Object.keys(this.inputDatasets).length} input datasets to file`);
+    } catch (error) {
+      console.error('Error saving input datasets:', error);
+    }
+  }
+
+  private generateDatasetKey(scenarioId: string, tableId: string): string {
+    return `${scenarioId}-${tableId}`;
+  }
+
+  public getInputDataset(scenarioId: string, tableId: string): StoredInputDataset | null {
+    const key = this.generateDatasetKey(scenarioId, tableId);
+    return this.inputDatasets[key] || null;
+  }
+
+  public saveInputDataset(scenarioId: string, tableId: string, dataset: InputDataset): StoredInputDataset {
+    const key = this.generateDatasetKey(scenarioId, tableId);
+    const now = new Date().toISOString();
+    
+    const existingDataset = this.inputDatasets[key];
+    const storedDataset: StoredInputDataset = {
+      scenarioId,
+      tableId,
+      title: dataset.title,
+      rows: dataset.rows,
+      createdAt: existingDataset?.createdAt || now,
+      updatedAt: now
+    };
+
+    this.inputDatasets[key] = storedDataset;
+    this.saveInputDatasets();
+    return storedDataset;
+  }
+
+  public inputDatasetExists(scenarioId: string, tableId: string): boolean {
+    const key = this.generateDatasetKey(scenarioId, tableId);
+    return key in this.inputDatasets;
+  }
+
+  public deleteInputDataset(scenarioId: string, tableId: string): boolean {
+    const key = this.generateDatasetKey(scenarioId, tableId);
+    if (key in this.inputDatasets) {
+      delete this.inputDatasets[key];
+      this.saveInputDatasets();
+      return true;
+    }
+    return false;
   }
 }

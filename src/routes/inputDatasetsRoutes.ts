@@ -1,5 +1,6 @@
 import { 
   getInputDataset, 
+  saveInputDataset,
   replaceInputDataset, 
   uploadCsvDataset, 
   syncFromDatalake, 
@@ -43,12 +44,16 @@ export const handleInputDatasetRoute = (req: Request, scenarioId: string, tableI
   }
   
   if (req.method === 'PUT') {
-    console.log(`Replacing dataset for scenario: ${scenarioId}, table: ${tableId}`);
+    console.log(`Saving dataset for scenario: ${scenarioId}, table: ${tableId}`);
     
     return req.json().then((body: any) => {
       try {
-        const result = replaceInputDataset(scenarioId, tableId, body);
-        return createResponse(result);
+        const result = saveInputDataset(scenarioId, tableId, body);
+        if (!result.success) {
+          return createErrorResponse(result.error, result.code);
+        }
+        
+        return createResponse(result.data, 201);
       } catch (error) {
         return createErrorResponse("Invalid dataset data", 400);
       }
