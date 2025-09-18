@@ -141,7 +141,7 @@ console.log(`   PUT  /api/scenarios/{id} - Update scenario name`);
 console.log(`   GET  /api/scenarios/inputs/definitions - Get table definitions`);
 console.log(`   GET  /api/scenarios/{id}/inputs/{tableId}/dataset - Get input dataset`);
 console.log(`   PUT  /api/scenarios/{id}/inputs/{tableId}/dataset - Replace dataset`);
-console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/upload-csv - Upload CSV`);
+console.log(`   PUT  /api/scenarios/{id}/inputs/{tableId}/dataset/upload-csv - Upload CSV`);
 console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/sync-from-datalake - Sync from datalake`);
 console.log(`   POST /api/scenarios/{id}/inputs/{tableId}/dataset/download-csv - Generate download link`);
 console.log(`   POST /api/scenarios/{id}/run - Run simulation`);

@@ -70,22 +70,46 @@ export const handleCsvUploadRoute = (req: Request, scenarioId: string, tableId: 
     return createErrorResponse("Invalid table ID", 400);
   }
 
-  if (req.method === 'POST') {
+  if (req.method === 'PUT') {
     console.log(`Uploading CSV for scenario: ${scenarioId}, table: ${tableId}`);
     
-    // For now, we'll expect JSON with CSV data
-    // In a real app, this would handle multipart/form-data
-    return req.json().then((body: any) => {
-      try {
-        const csvData = body.csvData || '';
-        const result = uploadCsvDataset(scenarioId, tableId, csvData);
-        return createResponse(result);
-      } catch (error) {
-        return createErrorResponse("Invalid CSV data", 400);
-      }
-    }).catch(() => {
-      return createErrorResponse("Invalid request body", 400);
-    });
+    // Handle both JSON with csvData field and direct text/csv content
+    const contentType = req.headers.get('content-type') || '';
+    
+    if (contentType.includes('application/json')) {
+      // JSON payload with csvData field
+      return req.json().then((body: any) => {
+        try {
+          const csvData = body.csvData || '';
+          if (!csvData) {
+            return createErrorResponse("Missing csvData field in request body", 400);
+          }
+          const result = uploadCsvDataset(scenarioId, tableId, csvData);
+          return createResponse(result);
+        } catch (error) {
+          return createErrorResponse("Invalid CSV data", 400);
+        }
+      }).catch(() => {
+        return createErrorResponse("Invalid JSON body", 400);
+      });
+    } else if (contentType.includes('text/csv') || contentType.includes('text/plain')) {
+      // Direct CSV content
+      return req.text().then((csvData: string) => {
+        try {
+          if (!csvData.trim()) {
+            return createErrorResponse("Empty CSV data", 400);
+          }
+          const result = uploadCsvDataset(scenarioId, tableId, csvData);
+          return createResponse(result);
+        } catch (error) {
+          return createErrorResponse("Invalid CSV data", 400);
+        }
+      }).catch(() => {
+        return createErrorResponse("Failed to read CSV data", 400);
+      });
+    } else {
+      return createErrorResponse("Content-Type must be application/json (with csvData field) or text/csv", 400);
+    }
   }
   
   return createErrorResponse("Method not allowed", 405);

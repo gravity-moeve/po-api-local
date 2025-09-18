@@ -108,34 +108,166 @@ export const replaceInputDataset = (scenarioId: string, tableId: TableId, newDat
 };
 
 export const uploadCsvDataset = (scenarioId: string, tableId: TableId, csvData: string): UploadResult => {
-  // Mock CSV processing - in reality this would parse based on table schema
-  const lines = csvData.split('\n').filter(line => line.trim());
-  const rows = lines.slice(1).map(line => { // Skip header
-    const values = line.split(',');
-    // This is a simplified mock - real implementation would map to proper schema
-    const row: Record<string, any> = {};
-    values.forEach((value, index) => {
-      row[`field_${index}`] = isNaN(Number(value)) ? value : Number(value);
+  // Validate scenario exists
+  if (!dataService.scenarioExists(scenarioId)) {
+    return {
+      tableId,
+      processed: 0,
+      replaced: 0,
+      errors: ['Scenario not found'],
+      warnings: []
+    };
+  }
+
+  try {
+    // Get current row count before replacement
+    const existingDataset = dataService.getInputDataset(scenarioId, tableId);
+    const oldRowCount = existingDataset?.rows.length || 0;
+
+    // Parse CSV data
+    const lines = csvData.split('\n').filter(line => line.trim());
+    
+    if (lines.length === 0) {
+      return {
+        tableId,
+        processed: 0,
+        replaced: 0,
+        errors: ['CSV file is empty'],
+        warnings: []
+      };
+    }
+
+    // Extract header and data rows
+    const headerLine = lines[0];
+    const dataLines = lines.slice(1);
+    
+    if (!headerLine) {
+      return {
+        tableId,
+        processed: 0,
+        replaced: 0,
+        errors: ['CSV file has no header'],
+        warnings: []
+      };
+    }
+
+    // Parse header to get column names
+    const headers = headerLine.split(',').map(h => h.trim().replace(/"/g, ''));
+    
+    // Parse data rows
+    const rows: Record<string, any>[] = [];
+    const errors: string[] = [];
+    
+    dataLines.forEach((line, index) => {
+      if (!line.trim()) return; // Skip empty lines
+      
+      try {
+        const values = parseCsvLine(line);
+        
+        if (values.length !== headers.length) {
+          errors.push(`Row ${index + 2}: Expected ${headers.length} columns, got ${values.length}`);
+          return;
+        }
+
+        const row: Record<string, any> = {};
+        headers.forEach((header, colIndex) => {
+          const value = values[colIndex]?.trim() || '';
+          // Try to convert to appropriate type
+          row[header] = convertCsvValue(value);
+        });
+        
+        rows.push(row);
+      } catch (error) {
+        errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : 'Parse error'}`);
+      }
     });
-    return row;
-  });
 
-  const newDataset: InputDataset = {
-    tableId,
-    title: `${tableId} Dataset`,
-    rows
-  };
+    // If there are too many errors, don't proceed
+    if (errors.length > 0 && errors.length >= dataLines.length / 2) {
+      return {
+        tableId,
+        processed: dataLines.length,
+        replaced: 0,
+        errors: ['Too many parsing errors', ...errors.slice(0, 5)],
+        warnings: []
+      };
+    }
 
-  replaceInputDataset(scenarioId, tableId, newDataset);
+    // Create new dataset
+    const newDataset: InputDataset = {
+      tableId,
+      title: `${tableId} Dataset (Uploaded from CSV)`,
+      rows
+    };
 
-  return {
-    tableId,
-    processed: rows.length,
-    replaced: rows.length,
-    errors: [],
-    warnings: []
-  };
+    // Replace the existing dataset
+    dataService.saveInputDataset(scenarioId, tableId, newDataset);
+
+    return {
+      tableId,
+      processed: dataLines.length,
+      replaced: rows.length,
+      errors,
+      warnings: errors.length > 0 ? [`${errors.length} rows had parsing errors`] : []
+    };
+
+  } catch (error) {
+    return {
+      tableId,
+      processed: 0,
+      replaced: 0,
+      errors: [`Failed to process CSV: ${error instanceof Error ? error.message : 'Unknown error'}`],
+      warnings: []
+    };
+  }
 };
+
+// Helper function to parse a CSV line handling quoted values
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current);
+  return result;
+}
+
+// Helper function to convert CSV string values to appropriate types
+function convertCsvValue(value: string): any {
+  if (value === '' || value.toLowerCase() === 'null') {
+    return null;
+  }
+  
+  if (value.toLowerCase() === 'true') {
+    return true;
+  }
+  
+  if (value.toLowerCase() === 'false') {
+    return false;
+  }
+  
+  // Try to parse as number
+  const numValue = Number(value);
+  if (!isNaN(numValue) && value.trim() !== '') {
+    return numValue;
+  }
+  
+  // Return as string, removing quotes if present
+  return value.replace(/^"(.*)"$/, '$1');
+}
 
 export const syncFromDatalake = (scenarioId: string, tableId: TableId): SyncResult => {
   // Get current row count before deletion
