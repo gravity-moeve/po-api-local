@@ -1,5 +1,6 @@
 import { DataService } from '../services/dataService';
 import { validateInputDataset, validateTableIdMatch } from '../utils/inputDatasetValidation';
+import { generateSelectorsForTable } from '../utils/selectorUtils';
 import type { InputDataset, DatasetReplaceResult, UploadResult, SyncResult, DownloadLink, InputDatasetByTable, TableId } from '../types';
 
 const dataService = DataService.getInstance();
@@ -36,10 +37,14 @@ export const getInputDataset = (scenarioId: string, tableId: TableId, page: numb
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   
+  // Generate selectors for this table type
+  const selectors = generateSelectorsForTable(tableId);
+  
   return {
     tableId: storedDataset.tableId,
     title: storedDataset.title,
-    rows: storedDataset.rows.slice(startIndex, endIndex)
+    rows: storedDataset.rows.slice(startIndex, endIndex),
+    selectors
   } as InputDatasetByTable;
 };
 
@@ -70,8 +75,14 @@ export const saveInputDataset = (scenarioId: string, tableId: TableId, dataset: 
   }
 
   try {
+    // Ensure selectors are included (generate if not provided)
+    const datasetWithSelectors: InputDataset = {
+      ...dataset,
+      selectors: dataset.selectors || generateSelectorsForTable(tableId)
+    };
+    
     // Save the dataset
-    const storedDataset = dataService.saveInputDataset(scenarioId, tableId, dataset as InputDataset);
+    const storedDataset = dataService.saveInputDataset(scenarioId, tableId, datasetWithSelectors);
     
     return {
       success: true,
@@ -193,11 +204,12 @@ export const uploadCsvDataset = (scenarioId: string, tableId: TableId, csvData: 
       };
     }
 
-    // Create new dataset
+    // Create new dataset with selectors
     const newDataset: InputDataset = {
       tableId,
       title: `${tableId} Dataset (Uploaded from CSV)`,
-      rows
+      rows,
+      selectors: generateSelectorsForTable(tableId)
     };
 
     // Replace the existing dataset
@@ -283,7 +295,8 @@ export const syncFromDatalake = (scenarioId: string, tableId: TableId): SyncResu
   const newDataset: InputDataset = {
     tableId,
     title: `${tableId} Dataset (Synced from Datalake)`,
-    rows: mockRows
+    rows: mockRows,
+    selectors: generateSelectorsForTable(tableId)
   };
 
   // Save the new mock dataset
@@ -302,32 +315,14 @@ function generateMockDataForTable(tableId: TableId): Record<string, any>[] {
   switch (tableId) {
     case 'domesticDemandForecast':
       return [
-        { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1200, price: 1.45, minVolume: 600 },
-        { period: 2, location: 'Barcelona', product: 'Diesel', volume: 1800, price: 1.32, minVolume: 750 }
-      ];
-    
-    case 'importOpportunities':
-      return [
-        { period: 1, product: 'Crude Oil', volume: 5000, incoterm: 'CIF', cifDestinationOrFobOrigin: 'Barcelona', price: 85.50, opportunity: 'Algeria Import' },
-        { period: 2, product: 'Refined Oil', volume: 3000, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Morocco', price: 92.30, opportunity: 'Morocco Refinery' }
+        { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1200, price: 1.45, minVolume: 600 },
+        { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 1800, price: 1.32, minVolume: 750 }
       ];
     
     case 'internationalDemandForecast':
       return [
-        { period: 1, product: 'Gasoline', volume: 2500, incoterm: 'CIF', cifDestinationOrFobOrigin: 'France', price: 1.55, opportunity: 'French Market' },
-        { period: 2, product: 'Diesel', volume: 3200, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Italy', price: 1.42, opportunity: 'Italian Distribution' }
-      ];
-    
-    case 'productionPlan':
-      return [
-        { period: 1, location: 'Refinery A', product: 'Gasoline', flow: 1500 },
-        { period: 2, location: 'Refinery B', product: 'Diesel', flow: 2200 }
-      ];
-    
-    case 'stockCapacities':
-      return [
-        { period: 1, location: 'Tank Farm 1', product: 'Gasoline', minVolume: 500, capacity: 5000 },
-        { period: 2, location: 'Tank Farm 2', product: 'Diesel', minVolume: 800, capacity: 8000 }
+        { periodId: 1, product: 'Gasoline', volume: 2500, incoterm: 'CIF', cifDestinationOrFobOrigin: 'France', price: 1.55, opportunity: 'French Market' },
+        { periodId: 2, product: 'Diesel', volume: 3200, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Italy', price: 1.42, opportunity: 'Italian Distribution' }
       ];
     
     case 'initialStock':
@@ -336,10 +331,76 @@ function generateMockDataForTable(tableId: TableId): Record<string, any>[] {
         { location: 'Tank Farm 2', product: 'Diesel', minVolume: 1500 }
       ];
     
-    case 'logisticsCosts':
+    case 'stockCapacities':
+      return [
+        { periodId: 1, location: 'Tank Farm 1', product: 'Gasoline', minVolume: 500, capacity: 5000 },
+        { periodId: 2, location: 'Tank Farm 2', product: 'Diesel', minVolume: 800, capacity: 8000 }
+      ];
+    
+    case 'marginalProductionCosts':
+      return [
+        { periodId: 1, location: 'Refinery A', product: 'Gasoline', productionLevel: 'Level 1', marginalCost: 45.50 },
+        { periodId: 2, location: 'Refinery B', product: 'Diesel', productionLevel: 'Level 2', marginalCost: 52.30 }
+      ];
+    
+    case 'productionLimits':
+      return [
+        { periodId: 1, location: 'Refinery A', productCategory: 'Raw Materials', cumulativeProductionLimit: 10000 },
+        { periodId: 2, location: 'Refinery B', productCategory: 'Finished Goods', cumulativeProductionLimit: 8500 }
+      ];
+    
+    case 'importOpportunities':
+      return [
+        { periodId: 1, product: 'Crude Oil', volume: 5000, incoterm: 'CIF', cifDestinationOrFobOrigin: 'Barcelona', price: 85.50, opportunity: 'Algeria Import' },
+        { periodId: 2, product: 'Refined Oil', volume: 3000, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Morocco', price: 92.30, opportunity: 'Morocco Refinery' }
+      ];
+    
+    case 'vesselTransportCosts':
       return [
         { vessel: 'Tanker Alpha', startDate: '2025-01-15', dailyCost: 25000, dailyFixedCosts: 5000 },
         { vessel: 'Tanker Beta', startDate: '2025-02-01', dailyCost: 28000, dailyFixedCosts: 5500 }
+      ];
+    
+    case 'charterCosts':
+      return [
+        { periodId: 1, category: 'Standard', origin: 'Port A', destination: 'Port B', charterCost: 15000 },
+        { periodId: 2, category: 'Premium', origin: 'Port C', destination: 'Port D', charterCost: 18500 }
+      ];
+    
+    case 'landTransportCosts':
+      return [
+        { periodId: 1, category: 'Standard', origin: 'Madrid', destination: 'Barcelona', transportCost: 2500 },
+        { periodId: 2, category: 'Express', origin: 'Barcelona', destination: 'Valencia', transportCost: 3200 }
+      ];
+    
+    case 'logisticsCosts':
+      return [
+        { periodId: 1, location: 'Madrid', category: 'Standard', variableCost: 12.50 },
+        { periodId: 2, location: 'Barcelona', category: 'Premium', variableCost: 15.75 }
+      ];
+    
+    case 'initialVesselLocation':
+      return [
+        { vessel: 'Tanker Alpha', location: 'Port A' },
+        { vessel: 'Tanker Beta', location: 'Port B' }
+      ];
+    
+    case 'vesselAvailability':
+      return [
+        { periodId: 1, vessel: 'Tanker Alpha', availability: 0.95 },
+        { periodId: 2, vessel: 'Tanker Beta', availability: 0.88 }
+      ];
+    
+    case 'forcedVoyages':
+      return [
+        { periodId: 1, origin: 'Port A', destination: 'Port B', forceEmpty: false, minVoyages: 2, maxVoyages: 5 },
+        { periodId: 2, origin: 'Port C', destination: 'Port D', forceEmpty: true, minVoyages: 1, maxVoyages: 3 }
+      ];
+    
+    case 'portInefficiencies':
+      return [
+        { port: 'Port A', loadingInefficiency: 2.5, unloadingInefficiency: 1.8 },
+        { port: 'Port B', loadingInefficiency: 3.2, unloadingInefficiency: 2.1 }
       ];
     
     default:

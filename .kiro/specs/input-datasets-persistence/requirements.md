@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This feature enhances the input datasets functionality by replacing mock responses with persistent data storage. The system will store and retrieve actual dataset information for specific scenario and table combinations, allowing users to persist their input data and retrieve it later. When no data exists for a given scenario/table combination, the system will return empty results instead of mock data.
+This feature enhances the input datasets functionality by replacing mock responses with persistent data storage and updating the table structure to match the new initialStepsConfiguration. The system will store and retrieve actual dataset information for specific scenario and table combinations, allowing users to persist their input data and retrieve it later. The feature includes updating table definitions to support the new comprehensive set of tables including demand forecasts, stocks, production, imports, logistics costs, and vessel management. When no data exists for a given scenario/table combination, the system will return empty results instead of mock data.
 
 ## Requirements
 
@@ -50,3 +50,28 @@ This feature enhances the input datasets functionality by replacing mock respons
 1. WHEN a PUT request is made for an existing scenario/table combination THEN the system SHALL overwrite the existing data
 2. WHEN data is updated THEN the system SHALL maintain data integrity and consistency
 3. WHEN an update occurs THEN the system SHALL return the same success response as initial creation
+
+### Requirement 5
+
+**User Story:** As a developer, I want the table definitions to match the new initialStepsConfiguration structure, so that the system supports all required input tables with correct column definitions.
+
+#### Acceptance Criteria
+
+1. WHEN table definitions are updated THEN the system SHALL support all 15 table types from the new configuration
+2. WHEN column names are updated THEN the system SHALL use 'periodId' instead of 'period' for consistency
+3. WHEN new tables are added THEN the system SHALL include proper validation and type definitions
+4. WHEN existing tables are modified THEN the system SHALL maintain backward compatibility where possible
+5. WHEN table definitions are accessed THEN the system SHALL return the correct column definitions for each table type
+
+### Requirement 6
+
+**User Story:** As a user, I want dataset responses to include selector information for dropdown/filter functionality, so that I can have dynamic filtering options based on the data structure.
+
+#### Acceptance Criteria
+
+1. WHEN dataset data is retrieved THEN the system SHALL include a selectors object with the response
+2. WHEN selectors are generated THEN the system SHALL identify appropriate columns for selector functionality (location, product, category, vessel, etc.)
+3. WHEN selectors are created THEN each selector SHALL include dependencies and items arrays
+4. WHEN mock data is generated THEN the system SHALL provide realistic selector values for testing
+5. WHEN selectors are returned THEN they SHALL match column names from the table definition
+6. WHEN not all columns need selectors THEN the system SHALL only include relevant columns (excluding numeric values, dates, and calculated fields)

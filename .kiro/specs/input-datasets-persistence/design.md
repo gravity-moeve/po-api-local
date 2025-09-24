@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design implements persistent storage for input datasets, replacing the current mock data approach with a file-based persistence system that follows the same patterns established for scenarios and scenario periods. The system will store dataset data per scenario/table combination and provide both GET and PUT endpoints for data retrieval and storage.
+This design implements persistent storage for input datasets, replacing the current mock data approach with a file-based persistence system that follows the same patterns established for scenarios and scenario periods. The system will store dataset data per scenario/table combination and provide both GET and PUT endpoints for data retrieval and storage. Additionally, this design updates the table definitions to match the new initialStepsConfiguration structure, supporting 15 different table types with updated column definitions and proper validation.
 
 ## Architecture
 
@@ -24,6 +24,8 @@ File System (data/inputDatasets.json)
 2. **Composite Key Structure**: Data will be organized by `scenarioId-tableId` combinations to enable efficient lookups
 3. **Service Layer Extension**: Extend the existing `DataService` class to handle input datasets
 4. **Backward Compatibility**: Maintain existing API contracts while replacing mock behavior
+5. **Table Structure Update**: Replace existing table definitions with new comprehensive structure supporting 15 table types
+6. **Column Name Standardization**: Use 'periodId' consistently instead of 'period' across all tables
 
 ## Components and Interfaces
 
@@ -89,11 +91,21 @@ export const handleInputDatasetRoute = (req: Request, scenarioId: string, tableI
 ### Request/Response Models
 
 ```typescript
-// PUT request payload (already defined in types)
-type InputDataset = {
+// Updated InputDataset type with selectors
+export type SelectorItem = {
+  dependencies: string[];
+  items: string[];
+};
+
+type Selectors = {
+  [key: string]: SelectorItem;
+};
+
+export type InputDataset = {
   tableId: string;
   title: string;
   rows: Record<string, any>[];
+  selectors: Selectors;
 };
 
 // Success response for PUT
@@ -103,6 +115,40 @@ type DatasetSaveResponse = {
   rowCount: number;
   updatedAt: string;
 };
+```
+
+### Selector Generation Strategy
+
+The system will automatically generate selectors for appropriate columns based on data type and usage patterns:
+
+**Columns suitable for selectors:**
+- **location**: Geographic locations (dependencies: [], items: ["Location A", "Location B", ...])
+- **product**: Product names (dependencies: [], items: ["Product X", "Product Y", ...])
+- **category**: Product or transport categories (dependencies: [], items: ["Category 1", "Category 2", ...])
+- **vessel**: Vessel names (dependencies: [], items: ["Vessel Alpha", "Vessel Beta", ...])
+- **origin/destination**: Location-based fields (dependencies: [], items: ["Port A", "Port B", ...])
+- **incoterm**: Trade terms (dependencies: [], items: ["FOB", "CIF", "EXW", ...])
+- **opportunity**: Opportunity types (dependencies: [], items: ["Standard", "Premium", ...])
+
+**Columns NOT suitable for selectors:**
+- Numeric fields (volume, price, cost, capacity, etc.)
+- Date fields (startDate, periodId)
+- Boolean fields (availability, forceEmpty)
+- Calculated fields (marginalCost, dailyCost, etc.)
+
+**Mock Selector Values:**
+```typescript
+// Example selectors for domesticDemandForecast
+selectors: {
+  location: {
+    dependencies: [],
+    items: ["New York", "Los Angeles", "Chicago", "Houston", "Miami"]
+  },
+  product: {
+    dependencies: ["location"],
+    items: ["Product A", "Product B", "Product C", "Product D"]
+  }
+}
 ```
 
 ### Validation Rules
@@ -189,24 +235,61 @@ Create test fixtures that mirror the existing table structures:
 6. Return success response with metadata
 7. Handle validation and storage errors
 
+## New Table Definitions Structure
+
+The updated table definitions will support the following 15 table types:
+
+### Demand Forecast Tables
+- **domesticDemandForecast**: periodId, location, product, volume, price, minVolume
+- **internationalDemandForecast**: periodId, product, volume, incoterm, cifDestinationOrFobOrigin, price, opportunity
+
+### Stock Management Tables
+- **initialStock**: location, product, minVolume
+- **stockCapacities**: periodId, location, product, minVolume, capacity
+
+### Production Tables
+- **marginalProductionCosts**: periodId, location, product, productionLevel, marginalCost
+- **productionLimits**: periodId, location, productCategory, cumulativeProductionLimit
+
+### Import Tables
+- **importOpportunities**: periodId, product, volume, incoterm, cifDestinationOrFobOrigin, price, opportunity
+
+### Logistics Cost Tables
+- **vesselTransportCosts**: vessel, startDate, dailyCost, dailyFixedCosts
+- **charterCosts**: periodId, category, origin, destination, charterCost
+- **landTransportCosts**: periodId, category, origin, destination, transportCost
+- **logisticsCosts**: periodId, location, category, variableCost
+
+### Vessel Management Tables
+- **initialVesselLocation**: vessel, location
+- **vesselAvailability**: periodId, vessel, availability
+- **forcedVoyages**: periodId, origin, destination, forceEmpty, minVoyages, maxVoyages
+- **portInefficiencies**: port, loadingInefficiency, unloadingInefficiency
+
 ## Migration Strategy
 
-### Phase 1: Infrastructure
+### Phase 1: Table Definitions Update
+- Replace existing table definitions with new comprehensive structure
+- Update column names from 'period' to 'periodId' for consistency
+- Add validation for all new table types
+- Ensure proper TypeScript types for all columns
+
+### Phase 2: Infrastructure
 - Extend DataService with input dataset methods
 - Create data file structure
-- Add validation utilities
+- Add validation utilities for new table structures
 
-### Phase 2: Controller Updates
+### Phase 3: Controller Updates
 - Update getInputDataset to use persistent storage
 - Implement saveInputDataset method
-- Maintain backward compatibility
+- Maintain backward compatibility with existing table IDs
 
-### Phase 3: Route Integration
+### Phase 4: Route Integration
 - Add PUT route handler
 - Update existing GET route to use new controller
 - Add comprehensive error handling
 
-### Phase 4: Testing & Validation
-- Comprehensive testing of all scenarios
+### Phase 5: Testing & Validation
+- Comprehensive testing of all 15 table types
 - Performance validation with large datasets
-- Error handling verification
+- Error handling verification for new table structures

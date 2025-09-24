@@ -3,12 +3,20 @@ import type { InputDataset, TableId } from '../types';
 // Valid TableId enum values
 const VALID_TABLE_IDS: TableId[] = [
   "domesticDemandForecast",
-  "importOpportunities", 
   "internationalDemandForecast",
-  "productionPlan",
-  "stockCapacities",
   "initialStock",
-  "logisticsCosts"
+  "stockCapacities",
+  "marginalProductionCosts",
+  "productionLimits",
+  "importOpportunities",
+  "vesselTransportCosts",
+  "charterCosts",
+  "landTransportCosts",
+  "logisticsCosts",
+  "initialVesselLocation",
+  "vesselAvailability",
+  "forcedVoyages",
+  "portInefficiencies"
 ];
 
 export type ValidationResult = {
@@ -35,6 +43,29 @@ export function validateInputDataset(payload: any): ValidationResult {
 
   if (!Array.isArray(payload.rows)) {
     errors.push('Missing or invalid required field: rows (must be an array)');
+  }
+
+  // Validate selectors if provided (optional field)
+  if (payload.selectors !== undefined) {
+    if (typeof payload.selectors !== 'object' || payload.selectors === null) {
+      errors.push('Invalid selectors field: must be an object');
+    } else {
+      // Validate selector structure
+      for (const [key, value] of Object.entries(payload.selectors)) {
+        if (typeof value !== 'object' || value === null) {
+          errors.push(`Invalid selector '${key}': must be an object`);
+          continue;
+        }
+        
+        const selector = value as any;
+        if (!Array.isArray(selector.dependencies)) {
+          errors.push(`Invalid selector '${key}': dependencies must be an array`);
+        }
+        if (!Array.isArray(selector.items)) {
+          errors.push(`Invalid selector '${key}': items must be an array`);
+        }
+      }
+    }
   }
 
   // Validate tableId is a valid enum value

@@ -45,7 +45,7 @@ describe('DataService Input Datasets', () => {
           scenarioId: 'scenario1',
           tableId: 'domesticDemandForecast',
           title: 'Test Dataset',
-          rows: [{ period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }],
+          rows: [{ periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }],
           createdAt: '2025-01-01T00:00:00.000Z',
           updatedAt: '2025-01-01T00:00:00.000Z'
         }
@@ -72,7 +72,8 @@ describe('DataService Input Datasets', () => {
       const testDataset: InputDataset = {
         tableId: 'domesticDemandForecast',
         title: 'Test Dataset',
-        rows: [{ period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }]
+        rows: [{ periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }],
+        selectors: { location: { dependencies: [], items: ['Madrid'] }, product: { dependencies: [], items: ['Gasoline'] } }
       };
 
       const saved = dataService.saveInputDataset('test-scenario', 'domesticDemandForecast', testDataset);
@@ -94,9 +95,10 @@ describe('DataService Input Datasets', () => {
         tableId: 'domesticDemandForecast',
         title: 'New Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
-          { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
-        ]
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
+          { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
+        ],
+        selectors: { location: { dependencies: [], items: ['Madrid', 'Barcelona'] }, product: { dependencies: [], items: ['Gasoline', 'Diesel'] } }
       };
 
       const result = dataService.saveInputDataset('test-scenario', 'domesticDemandForecast', testDataset);
@@ -109,11 +111,12 @@ describe('DataService Input Datasets', () => {
       expect(result.updatedAt).toBeDefined();
     });
 
-    test('should update existing dataset preserving createdAt', () => {
+    test('should update existing dataset preserving createdAt', async () => {
       const originalDataset: InputDataset = {
         tableId: 'domesticDemandForecast',
         title: 'Original Dataset',
-        rows: [{ period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }]
+        rows: [{ periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }],
+        selectors: { location: { dependencies: [], items: ['Madrid'] }, product: { dependencies: [], items: ['Gasoline'] } }
       };
 
       // Save original
@@ -121,15 +124,17 @@ describe('DataService Input Datasets', () => {
       
       // Wait a bit to ensure different timestamps
       const originalCreatedAt = original.createdAt;
+      await new Promise(resolve => setTimeout(resolve, 10));
       
       // Update with new data
       const updatedDataset: InputDataset = {
         tableId: 'domesticDemandForecast',
         title: 'Updated Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1500, price: 1.6, minVolume: 600 },
-          { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2500, price: 1.4, minVolume: 900 }
-        ]
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1500, price: 1.6, minVolume: 600 },
+          { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2500, price: 1.4, minVolume: 900 }
+        ],
+        selectors: { location: { dependencies: [], items: ['Madrid', 'Barcelona'] }, product: { dependencies: [], items: ['Gasoline', 'Diesel'] } }
       };
 
       const updated = dataService.saveInputDataset('test-scenario', 'domesticDemandForecast', updatedDataset);

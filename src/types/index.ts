@@ -81,10 +81,20 @@ export type DynamicFieldDefinition = {
   [key: string]: any;
 };
 
+export type SelectorItem = {
+  dependencies: string[];
+  items: string[];
+};
+
+export type Selectors = {
+  [key: string]: SelectorItem;
+};
+
 export type InputDataset = {
   tableId: string;
   title: string;
   rows: Record<string, any>[];
+  selectors: Selectors;
 };
 
 export type DatasetReplaceResult = {
@@ -128,57 +138,40 @@ export type ErrorResponse = {
 };
 
 // Specific dataset types for each table
-export type TableId = 
+export type TableId =
   | "domesticDemandForecast"
-  | "importOpportunities" 
   | "internationalDemandForecast"
-  | "productionPlan"
-  | "stockCapacities"
   | "initialStock"
-  | "logisticsCosts";
+  | "stockCapacities"
+  | "marginalProductionCosts"
+  | "productionLimits"
+  | "importOpportunities"
+  | "vesselTransportCosts"
+  | "charterCosts"
+  | "landTransportCosts"
+  | "logisticsCosts"
+  | "initialVesselLocation"
+  | "vesselAvailability"
+  | "forcedVoyages"
+  | "portInefficiencies";
 
 export type DomesticDemandForecastRow = {
-  period: number;
+  periodId: number;
   location: string;
   product: string;
   volume: number;
   price: number;
   minVolume: number;
-};
-
-export type ImportOpportunitiesRow = {
-  period: number;
-  product: string;
-  volume: number;
-  incoterm: string;
-  cifDestinationOrFobOrigin: string;
-  price: number;
-  opportunity: string;
 };
 
 export type InternationalDemandForecastRow = {
-  period: number;
+  periodId: number;
   product: string;
   volume: number;
   incoterm: string;
   cifDestinationOrFobOrigin: string;
   price: number;
   opportunity: string;
-};
-
-export type ProductionPlanRow = {
-  period: number;
-  location: string;
-  product: string;
-  flow: number;
-};
-
-export type StockCapacitiesRow = {
-  period: number;
-  location: string;
-  product: string;
-  minVolume: number;
-  capacity: number;
 };
 
 export type InitialStockRow = {
@@ -187,18 +180,108 @@ export type InitialStockRow = {
   minVolume: number;
 };
 
-export type LogisticsCostsRow = {
+export type StockCapacitiesRow = {
+  periodId: number;
+  location: string;
+  product: string;
+  minVolume: number;
+  capacity: number;
+};
+
+export type MarginalProductionCostsRow = {
+  periodId: number;
+  location: string;
+  product: string;
+  productionLevel: string;
+  marginalCost: number;
+};
+
+export type ProductionLimitsRow = {
+  periodId: number;
+  location: string;
+  productCategory: string;
+  cumulativeProductionLimit: number;
+};
+
+export type ImportOpportunitiesRow = {
+  periodId: number;
+  product: string;
+  volume: number;
+  incoterm: string;
+  cifDestinationOrFobOrigin: string;
+  price: number;
+  opportunity: string;
+};
+
+export type VesselTransportCostsRow = {
   vessel: string;
   startDate: string;
   dailyCost: number;
   dailyFixedCosts: number;
 };
 
-export type InputDatasetByTable = 
-  | { tableId: "domesticDemandForecast"; title: string; rows: DomesticDemandForecastRow[] }
-  | { tableId: "importOpportunities"; title: string; rows: ImportOpportunitiesRow[] }
-  | { tableId: "internationalDemandForecast"; title: string; rows: InternationalDemandForecastRow[] }
-  | { tableId: "productionPlan"; title: string; rows: ProductionPlanRow[] }
-  | { tableId: "stockCapacities"; title: string; rows: StockCapacitiesRow[] }
-  | { tableId: "initialStock"; title: string; rows: InitialStockRow[] }
-  | { tableId: "logisticsCosts"; title: string; rows: LogisticsCostsRow[] };
+export type CharterCostsRow = {
+  periodId: number;
+  category: string;
+  origin: string;
+  destination: string;
+  charterCost: number;
+};
+
+export type LandTransportCostsRow = {
+  periodId: number;
+  category: string;
+  origin: string;
+  destination: string;
+  transportCost: number;
+};
+
+export type LogisticsCostsRow = {
+  periodId: number;
+  location: string;
+  category: string;
+  variableCost: number;
+};
+
+export type InitialVesselLocationRow = {
+  vessel: string;
+  location: string;
+};
+
+export type VesselAvailabilityRow = {
+  periodId: number;
+  vessel: string;
+  availability: number;
+};
+
+export type ForcedVoyagesRow = {
+  periodId: number;
+  origin: string;
+  destination: string;
+  forceEmpty: boolean;
+  minVoyages: number;
+  maxVoyages: number;
+};
+
+export type PortInefficienciesRow = {
+  port: string;
+  loadingInefficiency: number;
+  unloadingInefficiency: number;
+};
+
+export type InputDatasetByTable =
+  | { tableId: "domesticDemandForecast"; title: string; rows: DomesticDemandForecastRow[]; selectors: Selectors }
+  | { tableId: "internationalDemandForecast"; title: string; rows: InternationalDemandForecastRow[]; selectors: Selectors }
+  | { tableId: "initialStock"; title: string; rows: InitialStockRow[]; selectors: Selectors }
+  | { tableId: "stockCapacities"; title: string; rows: StockCapacitiesRow[]; selectors: Selectors }
+  | { tableId: "marginalProductionCosts"; title: string; rows: MarginalProductionCostsRow[]; selectors: Selectors }
+  | { tableId: "productionLimits"; title: string; rows: ProductionLimitsRow[]; selectors: Selectors }
+  | { tableId: "importOpportunities"; title: string; rows: ImportOpportunitiesRow[]; selectors: Selectors }
+  | { tableId: "vesselTransportCosts"; title: string; rows: VesselTransportCostsRow[]; selectors: Selectors }
+  | { tableId: "charterCosts"; title: string; rows: CharterCostsRow[]; selectors: Selectors }
+  | { tableId: "landTransportCosts"; title: string; rows: LandTransportCostsRow[]; selectors: Selectors }
+  | { tableId: "logisticsCosts"; title: string; rows: LogisticsCostsRow[]; selectors: Selectors }
+  | { tableId: "initialVesselLocation"; title: string; rows: InitialVesselLocationRow[]; selectors: Selectors }
+  | { tableId: "vesselAvailability"; title: string; rows: VesselAvailabilityRow[]; selectors: Selectors }
+  | { tableId: "forcedVoyages"; title: string; rows: ForcedVoyagesRow[]; selectors: Selectors }
+  | { tableId: "portInefficiencies"; title: string; rows: PortInefficienciesRow[]; selectors: Selectors };
