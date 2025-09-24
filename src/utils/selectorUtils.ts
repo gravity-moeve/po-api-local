@@ -1,7 +1,7 @@
 import type { Selectors, TableId } from '../types';
 
 // Mock data for selectors
-const MOCK_PERIODS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+const MOCK_PERIODS = ["1", "2", "3", "4", "5", "6"];
 const MOCK_LOCATIONS = ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Seattle", "Boston", "Atlanta"];
 const MOCK_PRODUCTS = ["Product A", "Product B", "Product C", "Product D", "Product E"];
 const MOCK_CATEGORIES = ["Category 1", "Category 2", "Category 3", "Standard", "Premium"];
