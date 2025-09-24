@@ -1,6 +1,7 @@
 import type { Selectors, TableId } from '../types';
 
 // Mock data for selectors
+const MOCK_PERIODS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
 const MOCK_LOCATIONS = ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Seattle", "Boston", "Atlanta"];
 const MOCK_PRODUCTS = ["Product A", "Product B", "Product C", "Product D", "Product E"];
 const MOCK_CATEGORIES = ["Category 1", "Category 2", "Category 3", "Standard", "Premium"];
@@ -19,11 +20,13 @@ export function generateSelectorsForTable(tableId: TableId): Selectors {
 
   switch (tableId) {
     case "domesticDemandForecast":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.location = { dependencies: [], items: MOCK_LOCATIONS };
       selectors.product = { dependencies: ["location"], items: MOCK_PRODUCTS };
       break;
 
     case "internationalDemandForecast":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.product = { dependencies: [], items: MOCK_PRODUCTS };
       selectors.incoterm = { dependencies: [], items: MOCK_INCOTERMS };
       selectors.cifDestinationOrFobOrigin = { dependencies: ["incoterm"], items: MOCK_PORTS };
@@ -36,22 +39,26 @@ export function generateSelectorsForTable(tableId: TableId): Selectors {
       break;
 
     case "stockCapacities":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.location = { dependencies: [], items: MOCK_LOCATIONS };
       selectors.product = { dependencies: ["location"], items: MOCK_PRODUCTS };
       break;
 
     case "marginalProductionCosts":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.location = { dependencies: [], items: MOCK_LOCATIONS };
       selectors.product = { dependencies: ["location"], items: MOCK_PRODUCTS };
       selectors.productionLevel = { dependencies: [], items: MOCK_PRODUCTION_LEVELS };
       break;
 
     case "productionLimits":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.location = { dependencies: [], items: MOCK_LOCATIONS };
       selectors.productCategory = { dependencies: [], items: MOCK_PRODUCT_CATEGORIES };
       break;
 
     case "importOpportunities":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.product = { dependencies: [], items: MOCK_PRODUCTS };
       selectors.incoterm = { dependencies: [], items: MOCK_INCOTERMS };
       selectors.cifDestinationOrFobOrigin = { dependencies: ["incoterm"], items: MOCK_PORTS };
@@ -63,18 +70,21 @@ export function generateSelectorsForTable(tableId: TableId): Selectors {
       break;
 
     case "charterCosts":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.category = { dependencies: [], items: MOCK_CATEGORIES };
       selectors.origin = { dependencies: [], items: MOCK_PORTS };
       selectors.destination = { dependencies: ["origin"], items: MOCK_PORTS };
       break;
 
     case "landTransportCosts":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.category = { dependencies: [], items: MOCK_CATEGORIES };
       selectors.origin = { dependencies: [], items: MOCK_LOCATIONS };
       selectors.destination = { dependencies: ["origin"], items: MOCK_LOCATIONS };
       break;
 
     case "logisticsCosts":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.location = { dependencies: [], items: MOCK_LOCATIONS };
       selectors.category = { dependencies: [], items: MOCK_CATEGORIES };
       break;
@@ -85,10 +95,12 @@ export function generateSelectorsForTable(tableId: TableId): Selectors {
       break;
 
     case "vesselAvailability":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.vessel = { dependencies: [], items: MOCK_VESSELS };
       break;
 
     case "forcedVoyages":
+      selectors.periodId = { dependencies: [], items: MOCK_PERIODS };
       selectors.origin = { dependencies: [], items: MOCK_PORTS };
       selectors.destination = { dependencies: ["origin"], items: MOCK_PORTS };
       break;
