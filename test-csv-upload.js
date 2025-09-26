@@ -7,7 +7,7 @@ async function testCsvUpload() {
   try {
     // Test 1: Upload CSV with JSON payload
     console.log('1. Testing CSV upload with JSON payload...');
-    const csvData = `period,location,product,volume,price,minVolume
+    const csvData = `periodId,location,product,volume,price,minVolume
 1,Madrid,Gasoline,1500,1.45,750
 2,Barcelona,Diesel,2200,1.32,900
 3,Valencia,Gasoline,1800,1.48,800`;
@@ -45,7 +45,7 @@ async function testCsvUpload() {
 
     // Test 3: Upload CSV with direct text/csv content
     console.log('\n3. Testing CSV upload with direct CSV content...');
-    const directCsvData = `period,location,product,volume,price,minVolume
+    const directCsvData = `periodId,location,product,volume,price,minVolume
 1,Sevilla,Gasoline,1200,1.50,600
 2,Bilbao,Diesel,1900,1.35,850`;
 
@@ -67,7 +67,7 @@ async function testCsvUpload() {
 
     // Test 4: Test error handling - invalid CSV
     console.log('4. Testing error handling with invalid CSV...');
-    const invalidCsv = `period,location,product
+    const invalidCsv = `periodId,location,product
 1,Madrid
 2,Barcelona,Diesel,Extra,Column`;
 

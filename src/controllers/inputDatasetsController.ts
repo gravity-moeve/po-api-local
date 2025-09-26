@@ -27,18 +27,25 @@ export const getInputDataset = (scenarioId: string, tableId: TableId, page: numb
     return null;
   }
 
+  // Generate selectors for this table type
+  const selectors = generateSelectorsForTable(tableId);
+
   // Get dataset from persistent storage
   const storedDataset = dataService.getInputDataset(scenarioId, tableId);
+  
   if (!storedDataset) {
-    return null;
+    // Return empty dataset with selectors when no data exists
+    return {
+      tableId,
+      title: `${tableId} Dataset`,
+      rows: [],
+      selectors
+    } as InputDatasetByTable;
   }
 
   // Apply pagination
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  
-  // Generate selectors for this table type
-  const selectors = generateSelectorsForTable(tableId);
   
   return {
     tableId: storedDataset.tableId,
@@ -321,8 +328,8 @@ function generateMockDataForTable(tableId: TableId): Record<string, any>[] {
     
     case 'internationalDemandForecast':
       return [
-        { periodId: 1, product: 'Gasoline', volume: 2500, incoterm: 'CIF', cifDestinationOrFobOrigin: 'France', price: 1.55, opportunity: 'French Market' },
-        { periodId: 2, product: 'Diesel', volume: 3200, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Italy', price: 1.42, opportunity: 'Italian Distribution' }
+        { periodId: 1, product: 'Gasoline', volume: 2500, incoterm: 'CIF', cifDestinationOrFobOrigin: 'France', price: 1.55, isOpportunity: true },
+        { periodId: 2, product: 'Diesel', volume: 3200, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Italy', price: 1.42, isOpportunity: false }
       ];
     
     case 'initialStock':
@@ -351,8 +358,8 @@ function generateMockDataForTable(tableId: TableId): Record<string, any>[] {
     
     case 'importOpportunities':
       return [
-        { periodId: 1, product: 'Crude Oil', volume: 5000, incoterm: 'CIF', cifDestinationOrFobOrigin: 'Barcelona', price: 85.50, opportunity: 'Algeria Import' },
-        { periodId: 2, product: 'Refined Oil', volume: 3000, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Morocco', price: 92.30, opportunity: 'Morocco Refinery' }
+        { periodId: 1, product: 'Crude Oil', volume: 5000, incoterm: 'CIF', cifDestinationOrFobOrigin: 'Barcelona', price: 85.50, isOpportunity: true },
+        { periodId: 2, product: 'Refined Oil', volume: 3000, incoterm: 'FOB', cifDestinationOrFobOrigin: 'Morocco', price: 92.30, isOpportunity: false }
       ];
     
     case 'vesselTransportCosts':
@@ -362,10 +369,13 @@ function generateMockDataForTable(tableId: TableId): Record<string, any>[] {
       ];
     
     case 'charterCosts':
-      return [
-        { periodId: 1, category: 'Standard', origin: 'Port A', destination: 'Port B', charterCost: 15000 },
-        { periodId: 2, category: 'Premium', origin: 'Port C', destination: 'Port D', charterCost: 18500 }
-      ];
+      return Array.from({ length: 20 }, (_, i) => ({
+        periodId: (i % 6) + 1, // Cycle through periods 1-6
+        category: ['Standard', 'Premium', 'Express', 'Economy'][i % 4], // Cycle through categories
+        origin: ['Port A', 'Port B', 'Port C', 'Port D', 'Port E'][i % 5], // Cycle through origins
+        destination: ['Port F', 'Port G', 'Port H', 'Port I', 'Port J'][i % 5], // Cycle through destinations
+        charterCost: 15000 + (i * 500) + Math.floor(Math.random() * 2000) // Varying costs
+      }));
     
     case 'landTransportCosts':
       return [

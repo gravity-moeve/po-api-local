@@ -171,7 +171,7 @@ export type InternationalDemandForecastRow = {
   incoterm: string;
   cifDestinationOrFobOrigin: string;
   price: number;
-  opportunity: string;
+  isOpportunity: boolean;
 };
 
 export type InitialStockRow = {
@@ -210,7 +210,7 @@ export type ImportOpportunitiesRow = {
   incoterm: string;
   cifDestinationOrFobOrigin: string;
   price: number;
-  opportunity: string;
+  isOpportunity: boolean;
 };
 
 export type VesselTransportCostsRow = {

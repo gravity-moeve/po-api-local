@@ -58,9 +58,9 @@ describe('InputDatasetsController', () => {
         tableId: 'domesticDemandForecast',
         title: 'Test Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
-          { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 },
-          { period: 3, location: 'Valencia', product: 'Gasoline', volume: 1500, price: 1.4, minVolume: 600 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
+          { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 },
+          { periodId: 3, location: 'Valencia', product: 'Gasoline', volume: 1500, price: 1.4, minVolume: 600 }
         ],
         createdAt: '2025-01-01T00:00:00.000Z',
         updatedAt: '2025-01-01T00:00:00.000Z'
@@ -85,7 +85,7 @@ describe('InputDatasetsController', () => {
         tableId: 'domesticDemandForecast',
         title: 'Test Dataset',
         rows: Array.from({ length: 10 }, (_, i) => ({ 
-          period: i + 1, 
+          periodId: i + 1, 
           location: `Location${i}`, 
           product: 'Gasoline', 
           volume: 1000 + i, 
@@ -103,9 +103,9 @@ describe('InputDatasetsController', () => {
       const result = getInputDataset('test-scenario', 'domesticDemandForecast', 2, 3);
 
       expect(result?.rows).toHaveLength(3);
-      expect(result?.rows[0]?.period).toBe(4); // Should start from index 3 (page 2, size 3)
-      expect(result?.rows[1]?.period).toBe(5);
-      expect(result?.rows[2]?.period).toBe(6);
+      expect(result?.rows[0]?.periodId).toBe(4); // Should start from index 3 (page 2, size 3)
+      expect(result?.rows[1]?.periodId).toBe(5);
+      expect(result?.rows[2]?.periodId).toBe(6);
     });
   });
 
@@ -166,7 +166,7 @@ describe('InputDatasetsController', () => {
         tableId: 'domesticDemandForecast',
         title: 'Test Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }
         ],
         createdAt: '2025-01-01T00:00:00.000Z',
         updatedAt: '2025-01-01T12:00:00.000Z'
@@ -178,7 +178,7 @@ describe('InputDatasetsController', () => {
         tableId: 'domesticDemandForecast',
         title: 'Test Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }
         ]
       };
 

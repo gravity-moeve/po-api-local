@@ -51,8 +51,8 @@ describe('Input Datasets Integration Tests', () => {
         tableId: 'domesticDemandForecast',
         title: 'Integration Test Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
-          { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
+          { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
         ]
       };
 
@@ -132,9 +132,9 @@ describe('Input Datasets Integration Tests', () => {
         tableId: 'domesticDemandForecast',
         title: 'Retrieval Test Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
-          { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 },
-          { period: 3, location: 'Valencia', product: 'Gasoline', volume: 1500, price: 1.4, minVolume: 600 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
+          { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 },
+          { periodId: 3, location: 'Valencia', product: 'Gasoline', volume: 1500, price: 1.4, minVolume: 600 }
         ]
       };
 
@@ -161,7 +161,7 @@ describe('Input Datasets Integration Tests', () => {
         tableId: 'domesticDemandForecast',
         title: 'Pagination Test Dataset',
         rows: Array.from({ length: 10 }, (_, i) => ({
-          period: i + 1,
+          periodId: i + 1,
           location: `Location${i}`,
           product: 'Gasoline',
           volume: 1000 + i,
@@ -183,7 +183,7 @@ describe('Input Datasets Integration Tests', () => {
       
       const paginatedData = await getResponse.json();
       expect(paginatedData.rows).toHaveLength(3);
-      expect(paginatedData.rows[0].period).toBe(4); // Second page, starting from period 4
+      expect(paginatedData.rows[0].periodId).toBe(4); // Second page, starting from periodId 4
     });
 
     test('should return 404 for non-existent dataset', async () => {
@@ -209,7 +209,7 @@ describe('Input Datasets Integration Tests', () => {
         tableId,
         title: 'Initial Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }
         ]
       };
 
@@ -228,8 +228,8 @@ describe('Input Datasets Integration Tests', () => {
         tableId,
         title: 'Updated Dataset',
         rows: [
-          { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1500, price: 1.6, minVolume: 600 },
-          { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
+          { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1500, price: 1.6, minVolume: 600 },
+          { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
         ]
       };
 
@@ -263,13 +263,13 @@ describe('Input Datasets Integration Tests', () => {
       const dataset1 = {
         tableId,
         title: 'Concurrent Dataset 1',
-        rows: [{ period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }]
+        rows: [{ periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 }]
       };
 
       const dataset2 = {
         tableId,
         title: 'Concurrent Dataset 2',
-        rows: [{ period: 1, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }]
+        rows: [{ periodId: 1, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }]
       };
 
       // Simulate concurrent requests

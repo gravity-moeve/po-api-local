@@ -30,7 +30,6 @@ export function generateSelectorsForTable(tableId: TableId): Selectors {
       selectors.product = { dependencies: [], items: MOCK_PRODUCTS };
       selectors.incoterm = { dependencies: [], items: MOCK_INCOTERMS };
       selectors.cifDestinationOrFobOrigin = { dependencies: ["incoterm"], items: MOCK_PORTS };
-      selectors.opportunity = { dependencies: [], items: MOCK_OPPORTUNITIES };
       break;
 
     case "initialStock":
@@ -62,7 +61,6 @@ export function generateSelectorsForTable(tableId: TableId): Selectors {
       selectors.product = { dependencies: [], items: MOCK_PRODUCTS };
       selectors.incoterm = { dependencies: [], items: MOCK_INCOTERMS };
       selectors.cifDestinationOrFobOrigin = { dependencies: ["incoterm"], items: MOCK_PORTS };
-      selectors.opportunity = { dependencies: [], items: MOCK_OPPORTUNITIES };
       break;
 
     case "vesselTransportCosts":

@@ -21,8 +21,8 @@ async function testInputDatasetPersistence() {
       tableId: 'domesticDemandForecast',
       title: 'Test Domestic Demand Forecast',
       rows: [
-        { period: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
-        { period: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
+        { periodId: 1, location: 'Madrid', product: 'Gasoline', volume: 1000, price: 1.5, minVolume: 500 },
+        { periodId: 2, location: 'Barcelona', product: 'Diesel', volume: 2000, price: 1.3, minVolume: 800 }
       ]
     };
 
